@@ -49,6 +49,7 @@
         "app_password": "App-Passwort hinzufügen",
         "automap": "Ordner automatisch mappen (\"Sent items\", \"Sent\" => \"Sent\" etc.)",
         "backup_mx_options": "Relay-Optionen",
+        "bcc_dest_format": "BCC-Ziel muss eine gültige E-Mail-Adresse sein.",
         "comment_info": "Ein privater Kommentar ist für den Benutzer nicht einsehbar. Ein öffentlicher Kommentar wird als Tooltip im Interface des Benutzers angezeigt.",
         "custom_params": "Eigene Parameter",
         "custom_params_hint": "Richtig: --param=xy, falsch: --param xy",
@@ -515,6 +516,7 @@
         "optional": "Dieser Eintrag ist optional."
     },
     "edit": {
+        "acl": "ACL (Berechtigungen)",
         "active": "Aktiv",
         "is_regex": "Alias ist regulärer Ausdruck",
         "admin": "Administrator bearbeiten",
@@ -576,6 +578,7 @@
         "previous": "Vorherige Seite",
         "private_comment": "Privater Kommentar",
         "public_comment": "Öffentlicher Kommentar",
+        "pushover": "Pushover",
         "pushover_evaluate_x_prio": "Hohe Priorität eskalieren [<code>X-Priority: 1</code>]",
         "pushover_info": "Push-Benachrichtigungen werden angewendet auf alle nicht-Spam Nachrichten zugestellt an <b>%s</b>, einschließlich Alias-Adressen (shared, non-shared, tagged).",
         "pushover_only_x_prio": "Nur Mail mit hoher Priorität berücksichtigen [<code>X-Priority: 1</code>]",
@@ -645,6 +648,7 @@
         "register_status": "Registrierungsstatus",
         "rename": "Umbenennen",
         "set_fido2": "Registriere FIDO2-Gerät",
+        "set_fido2_touchid": "Registriere Touch ID auf Apple M1",
         "set_fn": "Benutzerfreundlichen Namen konfigurieren",
         "start_fido2_validation": "Starte FIDO2-Validierung"
     },

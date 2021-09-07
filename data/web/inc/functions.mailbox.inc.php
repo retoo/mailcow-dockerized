@@ -448,17 +448,17 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             );
             return false;
           }
-          $domain				= idn_to_ascii(strtolower(trim($_data['domain'])), 0, INTL_IDNA_VARIANT_UTS46);
+          $domain       = idn_to_ascii(strtolower(trim($_data['domain'])), 0, INTL_IDNA_VARIANT_UTS46);
           $description  = $_data['description'];
           if (empty($description)) {
             $description = $domain;
           }
-          $aliases			= (int)$_data['aliases'];
+          $aliases      = (int)$_data['aliases'];
           $mailboxes    = (int)$_data['mailboxes'];
-          $defquota			= (int)$_data['defquota'];
-          $maxquota			= (int)$_data['maxquota'];
+          $defquota     = (int)$_data['defquota'];
+          $maxquota     = (int)$_data['maxquota'];
           $restart_sogo = (int)$_data['restart_sogo'];
-          $quota				= (int)$_data['quota'];
+          $quota        = (int)$_data['quota'];
           if ($defquota > $maxquota) {
             $_SESSION['return'][] = array(
                 'type' => 'danger',
@@ -579,6 +579,9 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
           if (!empty(intval($_data['rl_value']))) {
             ratelimit('edit', 'domain', array('rl_value' => $_data['rl_value'], 'rl_frame' => $_data['rl_frame'], 'object' => $domain));
           }
+          if (!empty($_data['key_size']) && !empty($_data['dkim_selector'])) {
+            dkim('add', array('key_size' => $_data['key_size'], 'dkim_selector' => $_data['dkim_selector'], 'domains' => $domain));
+          }
           if (!empty($restart_sogo)) {
             $restart_response = json_decode(docker('post', 'sogo-mailcow', 'restart'), true);
             if ($restart_response['type'] == "success") {
@@ -684,7 +687,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             $gotos = array_unique($gotos);
             $gotos = array_filter($gotos);
             if (empty($gotos)) { return false; }
-            $goto = implode(",", $gotos);
+            $goto = implode(",", (array)$gotos);
           }
           foreach ($addresses as $address) {
             if (empty($address)) {
@@ -909,6 +912,9 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             if (!empty(intval($_data['rl_value']))) {
               ratelimit('edit', 'domain', array('rl_value' => $_data['rl_value'], 'rl_frame' => $_data['rl_frame'], 'object' => $alias_domain));
             }
+            if (!empty($_data['key_size']) && !empty($_data['dkim_selector'])) {
+              dkim('add', array('key_size' => $_data['key_size'], 'dkim_selector' => $_data['dkim_selector'], 'domains' => $alias_domain));
+            }
             $_SESSION['return'][] = array(
               'type' => 'success',
               'log' => array(__FUNCTION__, $_action, $_type, $_data_log, $_attr),
@@ -939,7 +945,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
           $password     = $_data['password'];
           $password2    = $_data['password2'];
           $name         = ltrim(rtrim($_data['name'], '>'), '<');
-          $quota_m			= intval($_data['quota']);
+          $quota_m      = intval($_data['quota']);
           if ((!isset($_SESSION['acl']['unlimited_quota']) || $_SESSION['acl']['unlimited_quota'] != "1") && $quota_m === 0) {
             $_SESSION['return'][] = array(
               'type' => 'danger',
@@ -962,7 +968,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
           $relayhost = (isset($_data['relayhost'])) ? intval($_data['relayhost']) : 0;
           $quarantine_notification = (isset($_data['quarantine_notification'])) ? strval($_data['quarantine_notification']) : strval($MAILBOX_DEFAULT_ATTRIBUTES['quarantine_notification']);
           $quarantine_category = (isset($_data['quarantine_category'])) ? strval($_data['quarantine_category']) : strval($MAILBOX_DEFAULT_ATTRIBUTES['quarantine_category']);
-          $quota_b		= ($quota_m * 1048576);
+          $quota_b    = ($quota_m * 1048576);
           $mailbox_attrs = json_encode(
             array(
               'force_pw_update' => strval($force_pw_update),
@@ -1497,8 +1503,8 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
               );
               continue;
             }
-            $lowspamlevel	= explode(',', $_data['spam_score'])[0];
-            $highspamlevel	= explode(',', $_data['spam_score'])[1];
+            $lowspamlevel = explode(',', $_data['spam_score'])[0];
+            $highspamlevel  = explode(',', $_data['spam_score'])[1];
             if (!is_numeric($lowspamlevel) || !is_numeric($highspamlevel)) {
               $_SESSION['return'][] = array(
                 'type' => 'danger',
@@ -1575,7 +1581,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             $_SESSION['return'][] = array(
               'type' => 'success',
               'log' => array(__FUNCTION__, $_action, $_type, $_data_log, $_attr),
-              'msg' => array('mailbox_modified', htmlspecialchars(implode(', ', $usernames)))
+              'msg' => array('mailbox_modified', htmlspecialchars(implode(', ', (array)$usernames)))
             );
           }
         break;
@@ -1676,6 +1682,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
               $user1 = (!empty($_data['user1'])) ? $_data['user1'] : $is_now['user1'];
               $active = (isset($_data['active'])) ? intval($_data['active']) : $is_now['active'];
               $last_run = (isset($_data['last_run'])) ? NULL : $is_now['last_run'];
+              $success = (isset($_data['success'])) ? NULL : $is_now['success'];
               $delete2duplicates = (isset($_data['delete2duplicates'])) ? intval($_data['delete2duplicates']) : $is_now['delete2duplicates'];
               $subscribeall = (isset($_data['subscribeall'])) ? intval($_data['subscribeall']) : $is_now['subscribeall'];
               $delete1 = (isset($_data['delete1'])) ? intval($_data['delete1']) : $is_now['delete1'];
@@ -1771,6 +1778,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
               `exclude` = :exclude,
               `host1` = :host1,
               `last_run` = :last_run,
+              `success` = :success,
               `user1` = :user1,
               `password1` = :password1,
               `mins_interval` = :mins_interval,
@@ -1797,6 +1805,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
               ':user1' => $user1,
               ':password1' => $password1,
               ':last_run' => $last_run,
+              ':success' => $success,
               ':mins_interval' => $mins_interval,
               ':port1' => $port1,
               ':enc1' => $enc1,
@@ -2093,7 +2102,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
               }
               $gotos = array_unique($gotos);
               $gotos = array_filter($gotos);
-              $goto = implode(",", $gotos);
+              $goto = implode(",", (array)$gotos);
             }
             if (!empty($goto)) {
               $stmt = $pdo->prepare("UPDATE `alias` SET
@@ -3017,7 +3026,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             while($field = array_shift($fields)) {
               $shown_fields[] = $field['Field'];
             }
-            $stmt = $pdo->prepare("SELECT " . implode(',', $shown_fields) . ",
+            $stmt = $pdo->prepare("SELECT " . implode(',', (array)$shown_fields) . ",
               `active`
                 FROM `imapsync` WHERE id = :id");
           }
@@ -3032,7 +3041,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             while($field = array_shift($fields)) {
               $shown_fields[] = $field['Field'];
             }
-            $stmt = $pdo->prepare("SELECT " . implode(',', $shown_fields) . ",
+            $stmt = $pdo->prepare("SELECT " . implode(',', (array)$shown_fields) . ",
               `active`
                 FROM `imapsync` WHERE id = :id");
           }
@@ -3423,7 +3432,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
           $stmt->execute(array(':domain' => $row['domain']));
           $SumQuotaInUse = $stmt->fetch(PDO::FETCH_ASSOC);
           $rl = ratelimit('get', 'domain', $_data);
-          $domaindata['max_new_mailbox_quota']	= ($row['quota'] * 1048576) - $MailboxDataDomain['in_use'];
+          $domaindata['max_new_mailbox_quota']  = ($row['quota'] * 1048576) - $MailboxDataDomain['in_use'];
           if ($domaindata['max_new_mailbox_quota'] > ($row['maxquota'] * 1048576)) {
             $domaindata['max_new_mailbox_quota'] = ($row['maxquota'] * 1048576);
           }
@@ -3445,7 +3454,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             $domaindata['msgs_total'] = 0;
           }
           $domaindata['mboxes_in_domain'] = $MailboxDataDomain['count'];
-          $domaindata['mboxes_left'] = $row['mailboxes']	- $MailboxDataDomain['count'];
+          $domaindata['mboxes_left'] = $row['mailboxes']  - $MailboxDataDomain['count'];
           $domaindata['domain_name'] = $row['domain'];
           $domaindata['description'] = $row['description'];
           $domaindata['max_num_aliases_for_domain'] = $row['aliases'];
@@ -3476,7 +3485,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
           ));
           $AliasDataDomain = $stmt->fetch(PDO::FETCH_ASSOC);
           (isset($AliasDataDomain['alias_count'])) ? $domaindata['aliases_in_domain'] = $AliasDataDomain['alias_count'] : $domaindata['aliases_in_domain'] = "0";
-          $domaindata['aliases_left'] = $row['aliases']	- $AliasDataDomain['alias_count'];
+          $domaindata['aliases_left'] = $row['aliases'] - $AliasDataDomain['alias_count'];
           if ($_SESSION['mailcow_cc_role'] == "admin")
           {
               $stmt = $pdo->prepare("SELECT GROUP_CONCAT(`username` SEPARATOR ', ') AS domain_admins FROM `domain_admins` WHERE `domain` = :domain");
@@ -3601,10 +3610,10 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
             $PushoverActive  = $stmt->fetch(PDO::FETCH_ASSOC);
             $stmt = $pdo->prepare("SELECT COALESCE(SUM(`quota`), 0) as `in_use` FROM `mailbox` WHERE (`kind` = '' OR `kind` = NULL) AND `domain` = :domain AND `username` != :username");
             $stmt->execute(array(':domain' => $row['domain'], ':username' => $_data));
-            $MailboxUsage	= $stmt->fetch(PDO::FETCH_ASSOC);
+            $MailboxUsage = $stmt->fetch(PDO::FETCH_ASSOC);
             $stmt = $pdo->prepare("SELECT IFNULL(COUNT(`address`), 0) AS `sa_count` FROM `spamalias` WHERE `goto` = :address AND `validity` >= :unixnow");
             $stmt->execute(array(':address' => $_data, ':unixnow' => time()));
-            $SpamaliasUsage	= $stmt->fetch(PDO::FETCH_ASSOC);
+            $SpamaliasUsage = $stmt->fetch(PDO::FETCH_ASSOC);
             $mailboxdata['max_new_quota'] = ($DomainQuota['quota'] * 1048576) - $MailboxUsage['in_use'];
             $mailboxdata['spam_aliases'] = $SpamaliasUsage['sa_count'];
             $mailboxdata['pushover_active'] = ($PushoverActive['pushover_active'] == 1) ? 1 : 0;
@@ -3901,7 +3910,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
               );
               continue;
             }
-            $domain	= idn_to_ascii(strtolower(trim($domain)), 0, INTL_IDNA_VARIANT_UTS46);
+            $domain = idn_to_ascii(strtolower(trim($domain)), 0, INTL_IDNA_VARIANT_UTS46);
             $stmt = $pdo->prepare("SELECT `username` FROM `mailbox`
               WHERE `domain` = :domain");
             $stmt->execute(array(':domain' => $domain));
@@ -4255,7 +4264,7 @@ function mailbox($_action, $_type, $_data = null, $_extra = null) {
               if (($key = array_search($username, $goto_exploded)) !== false) {
                 unset($goto_exploded[$key]);
               }
-              $gotos_rebuild = implode(',', $goto_exploded);
+              $gotos_rebuild = implode(',', (array)$goto_exploded);
               $stmt = $pdo->prepare("UPDATE `alias` SET
                 `goto` = :goto
                   WHERE `address` = :address");
