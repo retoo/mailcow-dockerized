@@ -136,7 +136,7 @@ def get_ip(address):
     ip = ip.ipv4_mapped
   if ip.is_private or ip.is_loopback:
     return False
-  
+
   return ip
 
 def ban(address):
@@ -193,15 +193,17 @@ def ban(address):
   else:
     logger.logWarn('%d more attempts in the next %d seconds until %s is banned' % (MAX_ATTEMPTS - bans[net]['attempts'], RETRY_WINDOW, net))
 
-def unban(net):
+def unban(net, unban_reason:str = None):
   global lock
 
   if not net in bans:
    logger.logInfo('%s is not banned, skipping unban and deleting from queue (if any)' % net)
    r.hdel('F2B_QUEUE_UNBAN', '%s' % net)
    return
-
-  logger.logInfo('Unbanning %s' % net)
+  if unban_reason:
+    logger.logInfo('Unbanning %s (%s)' % (net ,unban_reason))
+  else:
+    logger.logInfo('Unbanning %s' % net)
   if type(ipaddress.ip_network(net)) is ipaddress.IPv4Network:
     with lock:
       tables.unbanIPv4(net)
@@ -317,8 +319,12 @@ def autopurge():
       if bans[net]['attempts'] >= MAX_ATTEMPTS:
         NET_BAN_TIME = BAN_TIME if not BAN_TIME_INCREMENT else BAN_TIME * 2 ** bans[net]['ban_counter']
         TIME_SINCE_LAST_ATTEMPT = time.time() - bans[net]['last_attempt']
-        if TIME_SINCE_LAST_ATTEMPT > NET_BAN_TIME or TIME_SINCE_LAST_ATTEMPT > MAX_BAN_TIME:
-          unban(net)
+        ban_time_reached = TIME_SINCE_LAST_ATTEMPT > NET_BAN_TIME
+        if ban_time_reached:
+          unban(net, f"ban time reached (> {NET_BAN_TIME}s)")
+        max_ban_time_reached = TIME_SINCE_LAST_ATTEMPT > MAX_BAN_TIME
+        if max_ban_time_reached:
+          unban(net, f"max ban time reached (> {MAX_BAN_TIME}s)")
 
 def mailcowChainOrder():
   global lock
